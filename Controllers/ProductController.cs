@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace UploadExcel.WebApi.Controllers;
 
@@ -68,11 +69,19 @@ public class ProductController : ControllerBase
             Directory.CreateDirectory(folderPath);
         }
             
-        var fileName = $"{Guid.NewGuid()}.{extension}";
+        var fileName = $"{Guid.NewGuid()}{extension}";
         var filePath = Path.Combine(folderPath, fileName);
         using var stream = new FileStream(filePath, FileMode.Create);
         file.CopyTo(stream);
 
         return filePath;
+    }
+
+    [HttpGet("download")]
+    public async Task<FileResult> Download(CancellationToken ct)
+    {
+        var products = await _context.Products.ToListAsync(ct);
+        var file = ExcelHelper.CreateFile(products);
+        return File(file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "products.xlsx");
     }
 }
